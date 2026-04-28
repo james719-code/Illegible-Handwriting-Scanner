@@ -1,0 +1,75 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs and local environment
+*.log
+*.tmp
+*.temp
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Python ML workspace data and model outputs
+model_ai/data/raw/*
+!model_ai/data/raw/README.md
+model_ai/data/processed/*
+!model_ai/data/processed/README.md
+model_ai/models/checkpoints/*
+!model_ai/models/checkpoints/README.md
+model_ai/models/exported/*
+!model_ai/models/exported/README.md
+model_ai/models/tflite/*
+!model_ai/models/tflite/README.md
+
+# Android and Gradle
+*.iml
+.gradle/
+local.properties
+android/local.properties
+android/.idea/caches/
+android/.idea/libraries/
+android/.idea/modules.xml
+android/.idea/workspace.xml
+android/.idea/navEditor.xml
+android/.idea/assetWizardSettings.xml
+android/build/
+android/app/build/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+

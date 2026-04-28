@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">ClearScript</string>
+    <string name="home_title">Today</string>
+    <string name="home_subtitle">Organize handwriting capture and OCR with a focused, step-by-step flow.</string>
+    <string name="about_title">About Us</string>
+    <string name="about_heading">Built for better handwriting capture</string>
+    <string name="about_summary_title">Who we are</string>
+    <string name="about_summary">ClearScript helps students and professionals capture difficult handwriting, clean the image, and produce readable text quickly.</string>
+    <string name="about_tutorial_title">How to use ClearScript</string>
+    <string name="about_step_1_title">Capture or import handwriting</string>
+    <string name="about_step_1_detail">Use Scan for camera capture or Import for a gallery image. Keep the page flat and fully visible before continuing.</string>
+    <string name="about_step_2_title">Preprocess for readability</string>
+    <string name="about_step_2_detail">Adjust contrast and cleanup options to improve legibility. Better preprocessing gives more accurate text extraction.</string>
+    <string name="about_step_3_title">Run the Default AI scan</string>
+    <string name="about_step_3_detail">Start Scan to process the image with Default AI. Follow stage progress until completion.</string>
+    <string name="about_step_4_title">Review extracted result</string>
+    <string name="about_step_4_detail">Inspect confidence feedback and the extracted text. Use this screen to quickly validate whether another capture is needed.</string>
+    <string name="about_step_5_title">Manage history records</string>
+    <string name="about_step_5_detail">Open History to switch between list and card views, update titles, and delete records you no longer need.</string>
+    <string name="about_tips_title">Capture tips</string>
+    <string name="about_tips_detail">Use even lighting, avoid shadows across words, and keep your camera parallel to the page for best OCR quality.</string>
+    <string name="about_support_title">Support</string>
+    <string name="about_support">Support: support@clearscript.app</string>
+    <string name="about_version_title">App version</string>
+</resources>

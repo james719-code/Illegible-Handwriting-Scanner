@@ -1,0 +1,20 @@
+# Recommended stable environment for this project:
+# - Install Python 3.11.x (64-bit)
+# - Tested with Python 3.11.9
+# - TensorFlow 2.16.2 supports Python 3.9-3.12, but this repo standardizes on 3.11.x
+# - Reproducible pip installs for the training workspace
+numpy==1.26.4
+pandas==2.2.3
+opencv-python==4.10.0.84
+Pillow==10.4.0
+scikit-learn==1.5.2
+tensorflow==2.16.2
+matplotlib==3.9.2
+PyYAML==6.0.2
+tqdm==4.67.1
+pytesseract==0.3.13
+torch==2.2.1
+torchvision==0.17.1
+transformers==4.38.1
+accelerate==0.27.2
+albumentations==1.4.3
