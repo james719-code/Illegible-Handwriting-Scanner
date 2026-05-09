@@ -1,162 +1,143 @@
-# Illegible Handwriting OCR
+# ClearScript
 
-This repository has two main parts:
+## Description
 
-- `android/`: the Android app workspace
-- `model_ai/`: the Python training and evaluation workspace
+ClearScript is an Android handwriting OCR project with a companion Python machine learning workspace.
 
-If your goal is to prepare a dataset, train OCR, evaluate improvements, or export a TFLite model, start in `model_ai/`.
+The Android app helps users capture or import handwriting images, preprocess them for readability, run OCR, review extracted text, and manage scan history. The `model_ai/` workspace supports dataset inspection, OCR model training, evaluation, benchmarking, and TensorFlow Lite export.
 
-## Repository Layout
+Gradle project name: `IllegibleHandwritingOCR`.
 
-```text
-Enon_Proj/
-  android/                     Android application project
-  model_ai/                    ML workspace
-    .venv/                     Local Python environment
-    data/
-      raw/                     OCR images + transcripts
-      annotations/             Optional metadata for future models
-      processed/               Optional preprocessing outputs
-    models/
-      checkpoints/             Best checkpoints during training
-      exported/                Final models, evaluation reports, benchmarks
-      tflite/                  Exported TFLite models
-    scripts/
-      setup_venv.ps1
-      inspect_dataset.py
-      train_ocr.py
-      evaluate.py
-      export_tflite.py
-```
+## Features
 
-## Current OCR Workflow
+- Capture handwriting images with the Android camera.
+- Import handwriting images from the device gallery.
+- Preprocess images for improved readability.
+- Run OCR on handwriting images.
+- Review extracted text and confidence-related feedback.
+- Manage scan history records.
+- Train, evaluate, compare, and export OCR models from the Python workspace.
+- Configure Gemini fallback OCR through local Android properties.
 
-The documented OCR path in this repository is:
+## Tech Stack
 
-1. Put line-level handwriting images and same-stem `.txt` transcripts in `model_ai/data/raw/`.
-2. Activate `model_ai/.venv`.
-3. Inspect the dataset with `inspect_dataset.py`.
-4. Train the OCR baseline with `train_ocr.py`.
-5. Evaluate on a fixed validation set with `evaluate.py`.
-6. Track improvement through `benchmark_history.json` and `benchmark_history.csv`.
-7. Export the trained model with `export_tflite.py`.
+- Android
+  - Kotlin
+  - Jetpack Compose
+  - Android Gradle Plugin
+  - AndroidX Navigation Compose
+  - AndroidX CameraX
+  - AndroidX WorkManager
+  - Android SQLite APIs
+  - Coil
+  - OkHttp
+- Machine Learning / Python
+  - Python `3.11.x`
+  - TensorFlow `2.16.2`
+  - PyTorch `2.2.1`
+  - Transformers `4.38.1`
+  - OpenCV
+  - NumPy
+  - pandas
+  - scikit-learn
+  - Pillow
+  - pytesseract
 
-## Dataset Placement
+## Installation
 
-Recommended dataset structure:
+### Android App
 
-```text
-model_ai/data/raw/
-  train/
-    line_0001.png
-    line_0001.txt
-  val/
-    line_1001.png
-    line_1001.txt
-  test/
-    line_2001.png
-    line_2001.txt
-```
-
-Rules:
-
-- one image = one transcript file
-- the transcript must be beside the image
-- both files must share the same stem
-- UTF-8 text is expected
-- line-level crops are strongly recommended for this baseline
-
-## Python And Environment
-
-Recommended stable environment:
-
-- Python `3.11.9` 64-bit recommended
-- Any Python `3.11.x` 64-bit release is the intended target for this repo
-- TensorFlow `2.16.2`
-- NumPy `1.26.4`
-- pandas `2.2.3`
-- OpenCV `4.10.0.84`
-- Pillow `10.4.0`
-- scikit-learn `1.5.2`
-- matplotlib `3.9.2`
-- PyYAML `6.0.2`
-- tqdm `4.67.1`
-- pytesseract `0.3.13`
-
-The pinned versions live in [model_ai/requirements.txt](/c:/Users/James/Documents/Enon_Proj/model_ai/requirements.txt), and the intended interpreter version lives in [model_ai/.python-version](/c:/Users/James/Documents/Enon_Proj/model_ai/.python-version).
-
-The workspace also has a setup helper at [model_ai/scripts/setup_venv.ps1](/c:/Users/James/Documents/Enon_Proj/model_ai/scripts/setup_venv.ps1).
-
-Install guidance:
-
-- Install Python `3.11.9` 64-bit if you want the exact baseline used for this workspace.
-- Python `3.12` may work with TensorFlow `2.16.2`, but the project docs, `.python-version`, and setup flow are standardized on Python `3.11.x`.
-- Do not use Python `3.13` for this workspace.
-
-## Use The Existing `.venv`
-
-If the local environment already exists:
-
-```powershell
-cd c:\Users\James\Documents\Enon_Proj\model_ai
-.\.venv\Scripts\Activate.ps1
-python --version
-```
-
-If you need to create or repair it:
-
-```powershell
-cd c:\Users\James\Documents\Enon_Proj\model_ai
-powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv.ps1
-.\.venv\Scripts\Activate.ps1
-```
-
-If Python is not installed yet, install Python `3.11.9` 64-bit first, then run the commands above.
-
-## End-To-End OCR Example
-
-```powershell
-cd c:\Users\James\Documents\Enon_Proj\model_ai
-.\.venv\Scripts\Activate.ps1
-python scripts\inspect_dataset.py --dataset-root data\raw\train --show-missing
-python scripts\train_ocr.py --dataset-root data\raw\train
-python scripts\evaluate.py --model models\exported\ocr\final_model.keras --dataset-root data\raw\val --benchmark-name experiment_01 --benchmark-group val_set_v1 --save-predictions
-python scripts\export_tflite.py --model models\exported\ocr\final_model.keras --output models\tflite\ocr_model.tflite
-```
-
-## Benchmarks
-
-Evaluation now tracks benchmark history automatically.
-
-Files created in `model_ai/models/exported/ocr/`:
-
-- `benchmark_history.json`
-- `benchmark_history.csv`
-
-How to use them well:
-
-- keep the validation dataset fixed
-- keep the same `--benchmark-group` for comparable runs
-- watch for `exact_match_rate` going up
-- watch for `character_error_rate` and `word_error_rate` going down
-
-Example benchmarked evaluation:
-
-```powershell
-python scripts\evaluate.py --model models\exported\ocr\final_model.keras --dataset-root data\raw\val --benchmark-name experiment_02 --benchmark-group val_set_v1 --save-predictions
-```
-
-## Android App
-
-If you want to build the Android app:
+1. Install Android Studio.
+2. Open the `android/` folder as the Android project.
+3. Let Gradle sync the project dependencies.
+4. Optional: create `android/local.properties` for Gemini OCR configuration. See [Environment Variables](#environment-variables).
+5. Build the debug app:
 
 ```powershell
 cd android
 .\gradlew.bat assembleDebug
 ```
 
-Gemini fallback OCR is configured from `android/local.properties` so the API key is not hard-coded:
+### Python ML Workspace
+
+1. Install Python `3.11.x` 64-bit.
+2. Create or repair the local virtual environment:
+
+```powershell
+cd model_ai
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv.ps1
+```
+
+3. Activate the virtual environment:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+4. Verify the installation:
+
+```powershell
+python --version
+python -m pip show tensorflow numpy pandas opencv-python
+```
+
+## Usage
+
+### Android App
+
+Run the app from Android Studio, or build it from the command line:
+
+```powershell
+cd android
+.\gradlew.bat assembleDebug
+```
+
+TODO: Add emulator/device run instructions if this project requires any device-specific setup.
+
+### OCR Training Workflow
+
+Place paired handwriting images and same-stem `.txt` transcript files under `model_ai/data/raw/`.
+
+Recommended dataset layout:
+
+```text
+model_ai/data/raw/
+  train/
+    sample_0001.png
+    sample_0001.txt
+  val/
+    sample_1001.png
+    sample_1001.txt
+  test/
+    sample_2001.png
+    sample_2001.txt
+```
+
+Run the baseline OCR workflow:
+
+```powershell
+cd model_ai
+.\.venv\Scripts\Activate.ps1
+python scripts\inspect_dataset.py --dataset-root data\raw\train --show-missing
+python scripts\train_ocr.py --dataset-root data\raw\train
+python scripts\evaluate.py --model models\exported\ocr\final_model.keras --dataset-root data\raw\val --benchmark-name baseline_01 --benchmark-group val_set_v1 --save-predictions
+python scripts\export_tflite.py --model models\exported\ocr\final_model.keras --output models\tflite\ocr_model.tflite
+```
+
+Run the TrOCR workflow:
+
+```powershell
+cd model_ai
+.\.venv\Scripts\Activate.ps1
+python scripts\train_trocr.py --dataset-root data\raw\train --epochs 25 --batch-size 8
+python scripts\evaluate_trocr.py --model models\exported\trocr\final_model --dataset-root data\raw\val
+```
+
+## Environment Variables
+
+This project does not document required shell environment variables.
+
+Android OCR fallback settings are read from `android/local.properties`, which should stay local and uncommitted:
 
 ```properties
 geminiApiKey=YOUR_GEMINI_API_KEY
@@ -164,8 +145,69 @@ geminiModel=gemini-2.5-flash
 geminiTimeoutSeconds=30
 ```
 
-The Android project is separate from the Python training workflow.
+Supported fallback property names found in the Android build configuration:
 
-## More Detail
+- `geminiApiKey`
+- `geminiModel`
+- `geminiTimeoutSeconds`
+- `defaultAiApiKey`
+- `defaultAiTimeoutSeconds`
 
-The full ML guide is in [model_ai/README.md](/c:/Users/James/Documents/Enon_Proj/model_ai/README.md).
+TODO: Document any production environment variable names if they are added later.
+
+## Project Structure
+
+```text
+Enon_Proj/
+  android/                     Android application project
+    app/
+      src/main/java/com/enon/writingai/
+        core/                  Shared utilities, image processing, OCR, ML helpers
+        data/                  Local data, repositories, mappers, sources
+        domain/                Models, repositories, and use cases
+        feature/               App screens and view models
+        navigation/            Navigation graph and destinations
+        ui/                    Theme and shared UI components
+      src/main/res/            Android resources
+    gradle/                    Gradle wrapper and version catalog
+  model_ai/                    Python ML workspace
+    data/                      Raw, processed, and annotation folders
+    models/                    Checkpoints, exported models, and TFLite outputs
+    notebooks/                 Optional experiments
+    scripts/                   Training, evaluation, export, and setup scripts
+    src/                       OCR, detection, legibility, segmentation, evaluation code
+  README.md                    Root project documentation
+```
+
+## Scripts
+
+### Android
+
+Run these from the `android/` folder:
+
+```powershell
+.\gradlew.bat assembleDebug
+.\gradlew.bat test
+.\gradlew.bat connectedAndroidTest
+```
+
+### Python
+
+Run these from the `model_ai/` folder after activating `.venv`:
+
+```powershell
+python scripts\inspect_dataset.py --dataset-root data\raw\train --show-missing
+python scripts\train_ocr.py --dataset-root data\raw\train
+python scripts\evaluate.py --model models\exported\ocr\final_model.keras --dataset-root data\raw\val
+python scripts\export_tflite.py --model models\exported\ocr\final_model.keras --output models\tflite\ocr_model.tflite
+python scripts\train_trocr.py --dataset-root data\raw\train --epochs 25 --batch-size 8
+python scripts\evaluate_trocr.py --model models\exported\trocr\final_model --dataset-root data\raw\val
+python scripts\compare_models.py --dataset-root data\raw\val --output comparison_report.json
+```
+
+PowerShell helper scripts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\copy_tflite_to_android.ps1
+```
