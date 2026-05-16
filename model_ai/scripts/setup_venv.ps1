@@ -1,6 +1,7 @@
 param(
     [string]$VenvPath = "",
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    [switch]$Recreate
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,6 +44,11 @@ if (-not (Test-Path $RequirementsPath)) {
     throw "requirements.txt was not found at $RequirementsPath"
 }
 
+if ($Recreate -and (Test-Path $VenvPath)) {
+    Write-Host "Removing existing virtual environment at $VenvPath ..."
+    Remove-Item -LiteralPath $VenvPath -Recurse -Force
+}
+
 if (-not (Test-Path $VenvPython)) {
     $launcher = Get-PythonLauncher
     Write-Host "Creating virtual environment with $($launcher.Label) ..."
@@ -50,6 +56,10 @@ if (-not (Test-Path $VenvPython)) {
 }
 else {
     Write-Host "Using existing virtual environment at $VenvPath"
+    $versionCheck = & $VenvPython --version 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Existing virtual environment is not usable: $versionCheck. Rerun with -Recreate to rebuild it."
+    }
 }
 
 if (-not (Test-Path $VenvPython)) {

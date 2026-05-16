@@ -27,7 +27,7 @@ def build_legibility_model(
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     x = tf.keras.layers.Dropout(0.35)(x)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
-    outputs = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+    outputs = tf.keras.layers.Dense(1, activation="sigmoid", dtype="float32")(x)
 
     model = tf.keras.Model(inputs=inputs, outputs=outputs, name="legibility_classifier")
     model.compile(

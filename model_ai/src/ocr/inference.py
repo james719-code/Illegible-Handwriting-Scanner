@@ -6,11 +6,20 @@ import cv2
 import numpy as np
 
 from .data import load_ocr_image
+from .text import decode_ctc_prediction_batch
 from .text import decode_prediction_batch as decode_sequences
 from .text import load_vocabulary
 
 
-def decode_prediction_batch(predictions: np.ndarray, vocabulary: list[str]) -> list[str]:
+def decode_prediction_batch(
+    predictions: np.ndarray,
+    vocabulary: list[str],
+    *,
+    decoder: str = "argmax",
+    blank_index: int | None = None,
+) -> list[str]:
+    if decoder == "ctc":
+        return decode_ctc_prediction_batch(predictions, vocabulary, blank_index=blank_index)
     return decode_sequences(predictions, vocabulary)
 
 
@@ -26,7 +35,12 @@ def predict_batch(
     images = np.stack([load_ocr_image(path, image_size) for path in image_paths])
     model = tf.keras.models.load_model(model_path, compile=False)
     predictions = model.predict(images, verbose=0)
-    decoded = decode_prediction_batch(predictions, list(vocabulary["tokens"]))
+    decoded = decode_prediction_batch(
+        predictions,
+        list(vocabulary["tokens"]),
+        decoder=str(vocabulary.get("decoder", "argmax")),
+        blank_index=int(vocabulary.get("blank_index", len(vocabulary["tokens"]))),
+    )
     return {str(path): decoded[index] for index, path in enumerate(image_paths)}
 
 

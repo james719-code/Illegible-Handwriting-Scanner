@@ -31,6 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-text-length", type=int)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--lowercase", action="store_true")
+    parser.add_argument("--device", choices=["auto", "gpu", "cpu"], default="auto")
+    parser.add_argument("--no-mixed-precision", action="store_true")
     return parser.parse_args()
 
 
@@ -52,6 +54,8 @@ def main() -> None:
         max_text_length=args.max_text_length,
         max_samples=args.max_samples,
         lowercase=args.lowercase,
+        device=args.device,
+        mixed_precision=not args.no_mixed_precision,
     )
     artifacts = OCRTrainer(config).fit()
     print(f"Saved OCR artifacts to: {artifacts['model'].parent}")

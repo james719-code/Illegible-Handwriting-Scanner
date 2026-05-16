@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .data import load_legibility_dataset
 from .model import build_legibility_model, save_label_map
+from training_runtime import configure_tensorflow_runtime, make_tf_dataset
 
 
 @dataclass(slots=True)
@@ -19,6 +20,8 @@ class ClassifierTrainConfig:
     validation_split: float = 0.2
     learning_rate: float = 1e-3
     seed: int = 42
+    device: str = "auto"
+    mixed_precision: bool = True
 
 
 class LegibilityTrainer:
@@ -27,6 +30,18 @@ class LegibilityTrainer:
 
     def fit(self) -> dict[str, Path]:
         import tensorflow as tf
+
+        runtime = configure_tensorflow_runtime(
+            tf,
+            requested_device=self.config.device,
+            mixed_precision=self.config.mixed_precision,
+        )
+        print(
+            "TensorFlow runtime: "
+            f"device={runtime.device}, "
+            f"mixed_precision={runtime.mixed_precision}, "
+            f"gpus={runtime.gpu_names or 'none'}"
+        )
 
         image_size = (self.config.image_width, self.config.image_height)
         dataset = load_legibility_dataset(
@@ -68,12 +83,25 @@ class LegibilityTrainer:
             ),
         ]
 
-        history = model.fit(
+        train_dataset = make_tf_dataset(
             dataset.train_images,
             dataset.train_labels,
-            validation_data=(dataset.val_images, dataset.val_labels),
-            epochs=self.config.epochs,
             batch_size=self.config.batch_size,
+            shuffle=True,
+            seed=self.config.seed,
+        )
+        val_dataset = make_tf_dataset(
+            dataset.val_images,
+            dataset.val_labels,
+            batch_size=self.config.batch_size,
+            shuffle=False,
+            seed=self.config.seed,
+        )
+
+        history = model.fit(
+            train_dataset,
+            validation_data=val_dataset,
+            epochs=self.config.epochs,
             callbacks=callbacks,
             verbose=1,
         )
@@ -85,7 +113,9 @@ class LegibilityTrainer:
 
         model.save(final_model_path)
         history_path.write_text(json.dumps(history.history, indent=2), encoding="utf-8")
-        config_path.write_text(json.dumps(asdict(self.config), indent=2), encoding="utf-8")
+        persisted_config = asdict(self.config)
+        persisted_config["runtime"] = asdict(runtime)
+        config_path.write_text(json.dumps(persisted_config, indent=2), encoding="utf-8")
         save_label_map(labels_path, dataset.label_names)
 
         return {

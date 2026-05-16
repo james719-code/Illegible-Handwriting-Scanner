@@ -10,24 +10,40 @@ def build_ocr_model(
     import tensorflow as tf
 
     width, height = image_size
-    inputs = tf.keras.Input(shape=(height, width, 1))
-    x = tf.keras.layers.Conv2D(32, 3, padding="same", activation="relu")(inputs)
-    x = tf.keras.layers.MaxPooling2D(pool_size=2)(x)
-    x = tf.keras.layers.Conv2D(64, 3, padding="same", activation="relu")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=2)(x)
-    x = tf.keras.layers.Conv2D(128, 3, padding="same", activation="relu")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=2)(x)
-    x = tf.keras.layers.Flatten()(x)
-    x = tf.keras.layers.Dense(512, activation="relu")(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
-    x = tf.keras.layers.Dense(max_text_length * 128, activation="relu")(x)
-    x = tf.keras.layers.Reshape((max_text_length, 128))(x)
-    outputs = tf.keras.layers.Dense(vocab_size, activation="softmax")(x)
+    del max_text_length, learning_rate
 
-    model = tf.keras.Model(inputs=inputs, outputs=outputs, name="paired_ocr_baseline")
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy")],
-    )
-    return model
+    inputs = tf.keras.Input(shape=(height, width, 1), name="image")
+
+    x = tf.keras.layers.Conv2D(64, 3, padding="same", use_bias=False)(inputs)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))(x)
+
+    x = tf.keras.layers.Conv2D(128, 3, padding="same", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 1))(x)
+
+    x = tf.keras.layers.SeparableConv2D(256, 3, padding="same", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+    x = tf.keras.layers.SeparableConv2D(256, 3, padding="same", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Activation("relu")(x)
+
+    time_steps = width // 2
+    feature_size = (height // 4) * 256
+    x = tf.keras.layers.Reshape((time_steps, feature_size), name="image_to_sequence")(x)
+    x = tf.keras.layers.Dense(256, activation="relu")(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
+    x = tf.keras.layers.Bidirectional(
+        tf.keras.layers.LSTM(128, return_sequences=True, dropout=0.15),
+    )(x)
+    x = tf.keras.layers.Bidirectional(
+        tf.keras.layers.LSTM(128, return_sequences=True, dropout=0.15),
+    )(x)
+
+    # CTC reserves one extra output class for the blank token.
+    outputs = tf.keras.layers.Dense(vocab_size + 1, activation="softmax", dtype="float32", name="char_probs")(x)
+
+    return tf.keras.Model(inputs=inputs, outputs=outputs, name="crnn_ctc_ocr")

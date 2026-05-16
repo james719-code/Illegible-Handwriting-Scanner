@@ -25,10 +25,12 @@ class TrainedModelOcrEngine(
     private fun hasBundledModel(): Boolean {
         return runCatching {
             context.assets.open(modelAssetPath).use { true }
+            context.assets.open(vocabularyAssetPath).use { true }
         }.getOrDefault(false)
     }
 
     companion object {
         val modelAssetPath: String = ModelAssetSource.HANDWRITING_OCR_MODEL
+        val vocabularyAssetPath: String = ModelAssetSource.HANDWRITING_OCR_VOCABULARY
     }
 }

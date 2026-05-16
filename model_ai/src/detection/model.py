@@ -43,7 +43,7 @@ def build_detector_model(
     u2 = tf.keras.layers.Concatenate()([u2, c1])
     c4 = conv_block(u2, 32)
 
-    outputs = tf.keras.layers.Conv2D(1, 1, activation="sigmoid")(c4)
+    outputs = tf.keras.layers.Conv2D(1, 1, activation="sigmoid", dtype="float32")(c4)
     model = tf.keras.Model(inputs=inputs, outputs=outputs, name="text_region_detector")
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),

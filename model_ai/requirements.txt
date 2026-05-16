@@ -3,6 +3,9 @@
 # - Tested with Python 3.11.9
 # - TensorFlow 2.16.2 supports Python 3.9-3.12, but this repo standardizes on 3.11.x
 # - Reproducible pip installs for the training workspace
+# After install, run: python scripts/check_gpu.py
+# If PyTorch cannot see CUDA, reinstall torch/torchvision with the CUDA wheel
+# that matches your NVIDIA driver from the official PyTorch install selector.
 numpy==1.26.4
 pandas==2.2.3
 opencv-python==4.10.0.84

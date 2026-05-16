@@ -69,7 +69,7 @@ def main() -> None:
     from evaluation.metrics import ocr_report
     from evaluation.report import save_report
     from ocr.data import load_ocr_arrays
-    from ocr.text import decode_prediction_batch, load_vocabulary
+    from ocr.text import decode_ctc_prediction_batch, decode_prediction_batch, load_vocabulary
 
     args = parse_args()
     model_path = Path(args.model)
@@ -102,7 +102,15 @@ def main() -> None:
 
     model = tf.keras.models.load_model(model_path, compile=False)
     predictions = model.predict(images, verbose=0)
-    decoded = decode_prediction_batch(predictions, vocabulary)
+    decoder = str(vocabulary_payload.get("decoder", "argmax"))
+    if decoder == "ctc":
+        decoded = decode_ctc_prediction_batch(
+            predictions,
+            vocabulary,
+            blank_index=int(vocabulary_payload.get("blank_index", len(vocabulary))),
+        )
+    else:
+        decoded = decode_prediction_batch(predictions, vocabulary)
     report = ocr_report(texts, decoded)
     report["image_width"] = image_width
     report["image_height"] = image_height

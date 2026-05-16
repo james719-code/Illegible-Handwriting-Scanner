@@ -33,10 +33,14 @@ def parse_args() -> argparse.Namespace:
         help="Optional transcript-length filter. Keeps only samples whose transcription is at most this many characters.",
     )
     parser.add_argument("--lowercase", action="store_true")
-    parser.add_argument("--device", choices=["cuda", "cpu"], default="cuda")
+    parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument("--model-name", default="microsoft/trocr-base-handwritten")
     parser.add_argument("--freeze-encoder", action="store_true")
     parser.add_argument("--num-workers", type=int, default=0)
+    parser.add_argument("--no-mixed-precision", action="store_true")
+    parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
+    parser.add_argument("--no-pin-memory", action="store_true")
+    parser.add_argument("--no-persistent-workers", action="store_true")
     return parser.parse_args()
 
 
@@ -60,6 +64,10 @@ def main() -> None:
         model_name=args.model_name,
         freeze_encoder=args.freeze_encoder,
         num_workers=args.num_workers,
+        mixed_precision=not args.no_mixed_precision,
+        gradient_clip_norm=args.gradient_clip_norm,
+        pin_memory=not args.no_pin_memory,
+        persistent_workers=not args.no_persistent_workers,
     )
 
     print(f"Starting TrOCR training with config:")
@@ -70,6 +78,7 @@ def main() -> None:
     print(f"  Epochs: {args.epochs}")
     print(f"  Learning rate: {args.learning_rate}")
     print(f"  Max text length filter: {args.max_text_length if args.max_text_length is not None else 'none'}")
+    print(f"  Mixed precision: {not args.no_mixed_precision}")
 
     trainer = TrOCRTrainer(config)
     

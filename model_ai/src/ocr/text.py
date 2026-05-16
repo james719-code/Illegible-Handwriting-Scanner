@@ -62,6 +62,38 @@ def decode_prediction_batch(predictions: np.ndarray, vocabulary: list[str]) -> l
     return [decode_indices(sample_ids, vocabulary) for sample_ids in token_ids]
 
 
+def decode_ctc_prediction_batch(
+    predictions: np.ndarray,
+    vocabulary: list[str],
+    *,
+    blank_index: int | None = None,
+) -> list[str]:
+    blank_index = len(vocabulary) if blank_index is None else blank_index
+    pad_index = vocabulary.index(PAD_TOKEN)
+    unknown_index = vocabulary.index(UNKNOWN_TOKEN)
+    token_ids = np.argmax(predictions, axis=-1)
+    decoded_batch: list[str] = []
+
+    for sample_ids in token_ids:
+        previous = None
+        characters: list[str] = []
+        for raw_index in sample_ids:
+            index = int(raw_index)
+            if index == previous:
+                continue
+            previous = index
+            if index in {blank_index, pad_index}:
+                continue
+            if index == unknown_index:
+                characters.append("?")
+                continue
+            if 0 <= index < len(vocabulary):
+                characters.append(vocabulary[index])
+        decoded_batch.append("".join(characters).rstrip())
+
+    return decoded_batch
+
+
 def save_vocabulary(
     output_path: str | Path,
     vocabulary: list[str],
@@ -69,6 +101,8 @@ def save_vocabulary(
     image_width: int,
     image_height: int,
     max_text_length: int,
+    decoder: str = "argmax",
+    blank_index: int | None = None,
 ) -> Path:
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,6 +113,8 @@ def save_vocabulary(
                 "image_width": image_width,
                 "image_height": image_height,
                 "max_text_length": max_text_length,
+                "decoder": decoder,
+                "blank_index": len(vocabulary) if blank_index is None else blank_index,
             },
             indent=2,
             ensure_ascii=False,

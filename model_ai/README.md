@@ -14,12 +14,51 @@ The baseline is simplest and most reliable when each image contains a single tex
 This workspace currently supports:
 
 - inspecting an OCR dataset before training
-- training a TensorFlow OCR baseline from image + text pairs
+- training a TensorFlow CRNN + CTC OCR recognizer from image + text pairs
+- fine-tuning TrOCR for higher-accuracy handwritten line recognition
 - evaluating a trained `.keras` OCR model
 - exporting a trained OCR model to `.tflite`
 - tracking benchmark history across repeated evaluation runs
 
 There is also code under `src/detection/`, `src/legibility/`, and `src/segmentation/`, but the end-to-end documented workflow in this folder is the OCR path above.
+
+## Research-Backed Algorithm Direction
+
+Researched on 2026-05-16. The best improvement path for this project is a two-stage handwritten OCR pipeline:
+
+```text
+page or camera image
+  -> preprocessing and text-region detection
+  -> line or word crop extraction
+  -> handwritten text recognition
+  -> CER/WER evaluation and mobile export
+```
+
+Recommended algorithms:
+
+| Use case | Recommended algorithm | Why it fits this repo |
+|----------|-----------------------|-----------------------|
+| Highest handwriting accuracy | Fine-tune TrOCR or another transformer OCR recognizer on line-level handwriting crops | TrOCR uses a pretrained image Transformer plus text Transformer and was designed as an end-to-end text recognizer. The available `microsoft/trocr-*-handwritten` models are intended for single text-line OCR, which matches the dataset format used here. |
+| Next research experiment | DTrOCR-style decoder-only Transformer OCR | DTrOCR reports strong printed, handwritten, and scene text recognition results with a simpler decoder-only design. Treat this as an experiment after the TrOCR pipeline is stable because this repo already has TrOCR training code. |
+| Mobile or TFLite deployment | CRNN + CTC recognizer | Applied in `src/ocr/model.py` and `src/ocr/train.py`. CRNN combines CNN feature extraction, sequence modeling, and CTC transcription. It handles variable-length text without character segmentation and is much smaller than transformer OCR, making it more practical for Android fallback models. |
+| Full-page or camera images | Text detector such as DB/DB++, EAST, or a lightweight U-Net detector, followed by TrOCR on each crop | OCR quality drops when a recognizer sees a whole page. Detection first lets the recognizer work on clean line/word regions. PaddleOCR documents this two-stage pattern and lists DB/DB++, EAST, SAST, PSENet, and related detectors. |
+
+Implementation priority:
+
+1. Keep TrOCR as the main accuracy model and train it with `scripts/train_trocr.py`.
+2. Improve the dataset by using line-level crops with exact `.txt` transcripts instead of full-page images.
+3. Add or train a text-region detector for page photos, then pass each crop to TrOCR.
+4. Track Character Error Rate (CER), Word Error Rate (WER), validation loss, and inference speed for every model.
+5. Export the compact CRNN + CTC model to TFLite when Android on-device size and speed become more important than maximum accuracy.
+
+Research sources:
+
+- TrOCR paper: https://arxiv.org/abs/2109.10282
+- Hugging Face TrOCR handwritten model notes: https://huggingface.co/microsoft/trocr-large-handwritten
+- DTrOCR paper: https://arxiv.org/abs/2308.15996
+- CRNN + CTC paper: https://arxiv.org/abs/1507.05717
+- PaddleOCR algorithm overview for detection and recognition pipelines: https://www.paddleocr.ai/v2.9/en/algorithm/overview.html
+- CVPR 2025 HTR generalization paper discussing CTC, Seq2Seq, hybrid models, CER, and WER: https://openaccess.thecvf.com/content/CVPR2025/papers/Garrido-Munoz_On_the_Generalization_of_Handwritten_Text_Recognition_Models_CVPR_2025_paper.pdf
 
 ## Folder Layout
 
@@ -38,8 +77,10 @@ model_ai/
   notebooks/                  Optional experiments
   scripts/
     setup_venv.ps1
+    check_gpu.py
     inspect_dataset.py
     train_ocr.py
+    train_trocr.py
     evaluate.py
     export_tflite.py
   src/
@@ -161,7 +202,26 @@ Verify the environment:
 ```powershell
 python --version
 python -m pip show tensorflow numpy pandas opencv-python
+python scripts\check_gpu.py
 ```
+
+## GPU Training
+
+Training now uses GPU automatically when the installed ML runtime can see one:
+
+- TensorFlow trainers (`train_ocr.py`, `src/legibility/train.py`, `src/detection/train.py`) configure GPU memory growth, enable mixed precision on GPU, and feed batches through `tf.data` with prefetching.
+- TrOCR training (`train_trocr.py`) auto-selects CUDA, uses mixed precision, pinned memory, non-blocking GPU transfers, gradient clipping, and cuDNN benchmarking.
+- Every saved `train_config.json` includes a `runtime` block showing whether the run actually used CPU or GPU.
+
+Check GPU visibility before training:
+
+```powershell
+cd c:\Users\James\Documents\Enon_Proj\model_ai
+.\.venv\Scripts\Activate.ps1
+python scripts\check_gpu.py
+```
+
+If PyTorch prints `cuda available: False`, reinstall PyTorch with the CUDA wheel that matches your NVIDIA driver from the official PyTorch install selector. If TensorFlow prints `gpu count: 0`, the installed TensorFlow build cannot see a GPU in this environment, so its trainers will keep working on CPU while TrOCR can still use CUDA through PyTorch.
 
 ## Create Or Recreate The Environment
 
@@ -170,6 +230,12 @@ If `.venv` is missing or you want to rebuild it, run:
 ```powershell
 cd c:\Users\James\Documents\Enon_Proj\model_ai
 powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv.ps1
+```
+
+If the existing `.venv` points to a missing Python install, rebuild it:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv.ps1 -Recreate
 ```
 
 Prerequisite:
@@ -200,9 +266,12 @@ cd c:\Users\James\Documents\Enon_Proj\model_ai
 .\.venv\Scripts\Activate.ps1
 python scripts\inspect_dataset.py --dataset-root data\raw\train --show-missing
 python scripts\train_ocr.py --dataset-root data\raw\train
+python scripts\train_trocr.py --dataset-root data\raw\train --batch-size 8 --num-workers 2
 python scripts\evaluate.py --model models\exported\ocr\final_model.keras --dataset-root data\raw\val --benchmark-name baseline_01 --benchmark-group val_set_v1 --save-predictions
 python scripts\export_tflite.py --model models\exported\ocr\final_model.keras --output models\tflite\ocr_model.tflite
 ```
+
+`train_ocr.py` now trains a CRNN + CTC recognizer. Its saved `vocabulary.json` includes `decoder: "ctc"` and `blank_index`, so `evaluate.py` and the Python inference helper decode repeated CTC outputs correctly.
 
 ## Full Guide From Scratch
 

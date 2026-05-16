@@ -204,6 +204,8 @@ def create_trocr_dataloaders(
     processor: TrOCRProcessor,
     batch_size: int = 8,
     num_workers: int = 0,
+    pin_memory: bool = False,
+    persistent_workers: bool = False,
     validation_split: float = 0.2,
     seed: int = 42,
     lowercase: bool = False,
@@ -239,6 +241,9 @@ def create_trocr_dataloaders(
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers and num_workers > 0,
+        prefetch_factor=2 if num_workers > 0 else None,
         collate_fn=collate_fn,
     )
 
@@ -247,6 +252,9 @@ def create_trocr_dataloaders(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
+        pin_memory=pin_memory,
+        persistent_workers=persistent_workers and num_workers > 0,
+        prefetch_factor=2 if num_workers > 0 else None,
         collate_fn=collate_fn,
     )
 

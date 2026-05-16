@@ -52,7 +52,10 @@ python scripts/train_trocr.py \
 | `--learning-rate` | 1e-5 | AdamW learning rate |
 | `--freeze-encoder` | False | Freeze vision transformer encoder |
 | `--model-name` | `microsoft/trocr-base-handwritten` | HuggingFace model ID |
-| `--device` | `cuda` | Device (`cuda` or `cpu`) |
+| `--device` | `auto` | Device (`auto`, `cuda`, or `cpu`) |
+| `--num-workers` | 0 | DataLoader worker count; try 2-4 on a GPU machine |
+| `--no-mixed-precision` | False | Disable CUDA AMP if you need full FP32 |
+| `--gradient-clip-norm` | 1.0 | Gradient clipping for stable fine-tuning |
 
 **For Small Datasets (<500 samples):**
 ```bash
@@ -147,6 +150,7 @@ python scripts/train_trocr.py \
   --dataset-root data/raw/train \
   --epochs 50 \
   --batch-size 16 \
+  --num-workers 2 \
   --learning-rate 2e-5 \
   --model-name microsoft/trocr-base-handwritten
 ```
